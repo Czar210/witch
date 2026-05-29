@@ -21,12 +21,36 @@ PAD = 12.0
 IGNORE_DIRS = {"__pycache__", ".git", ".venv", "venv", "env", "node_modules",
                "build", "dist", ".mypy_cache", ".pytest_cache", ".tox"}
 
-# raio da bolinha-folha por categoria
-LEAF_R = {
-    "keyword": 30, "builtin": 30, "summon": 32, "identifier": 27, "number": 23,
-    "string": 26, "dunder": 28, "private": 26, "special": 22, "operator": 16,
-    "comment": 22,
+# Todas as bolinhas têm o MESMO tamanho — círculos iguais empacotam num padrão
+# harmônico (tipo favo), bem mais bonito que um amontoado de tamanhos desiguais.
+LEAF_RADIUS = 26.0
+
+# cor por categoria (para as contas/gemas brilhantes do nível de detalhe)
+COLORS = {
+    "keyword": "#e8c468", "builtin": "#5fd0c5", "operator": "#aab3c5",
+    "identifier": "#e9d9b8", "number": "#d99873", "string": "#9bd17a",
+    "comment": "#6b7488", "dunder": "#c79be8", "private": "#d8c59a",
+    "special": "#86e0d0", "summon": "#e6a3c7",
 }
+
+
+def _darken(h, f):
+    h = h.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"#{int(r * f):02x}{int(g * f):02x}{int(b * f):02x}"
+
+
+def _defs():
+    """Um gradiente radial por categoria — dá às bolinhas um brilho de gema."""
+    grads = []
+    for cat, c in COLORS.items():
+        grads.append(
+            f'<radialGradient id="bead-{cat}" cx="37%" cy="32%" r="70%">'
+            f'<stop offset="0%" stop-color="#ffffff" stop-opacity="0.92"/>'
+            f'<stop offset="30%" stop-color="{c}"/>'
+            f'<stop offset="100%" stop-color="{_darken(c, 0.4)}"/>'
+            f"</radialGradient>")
+    return "<defs>" + "".join(grads) + "</defs>"
 
 
 @dataclass
@@ -72,7 +96,7 @@ def build_file_scope(path):
     for row, cat, markup, _ in iter_glyphs(src):
         if not markup.startswith("<svg"):
             continue
-        find(root, row).glyphs.append((cat, markup, float(LEAF_R.get(cat, 24))))
+        find(root, row).glyphs.append((cat, markup, LEAF_RADIUS))
     return root
 
 
@@ -241,11 +265,12 @@ def _draw(scope, cx, cy, depth, parts, lodmin):
                 1)
             parts.append(f'<g class="{cat}">{placed}</g>')
         else:
-            # bolinha minúscula: ponto colorido (nível de detalhe)
+            # bolinha minúscula: conta/gema brilhante (gradiente radial)
             cat = ref[0]
-            parts.append(f'<g class="{cat}"><circle cx="{cx + x:.1f}" cy="{cy + y:.1f}" r="{r:.1f}" '
-                         f'fill="currentColor" opacity="0.8"/><circle cx="{cx + x:.1f}" cy="{cy + y:.1f}" '
-                         f'r="{r:.1f}" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.4"/></g>')
+            edge = COLORS.get(cat, "#9aa3b5")
+            parts.append(f'<circle cx="{cx + x:.1f}" cy="{cy + y:.1f}" r="{r:.1f}" fill="url(#bead-{cat})"/>'
+                         f'<circle cx="{cx + x:.1f}" cy="{cy + y:.1f}" r="{r:.1f}" fill="none" '
+                         f'stroke="{edge}" stroke-width="0.5" opacity="0.5"/>')
 
 
 _BOLAO_CSS = """
@@ -299,8 +324,8 @@ def render_bolao(path):
     layout(root)
     margin = 50
     size = 2 * (root.R + margin)
-    lodmin = root.R * 0.012   # abaixo disso, a bolinha vira só um ponto
-    parts = []
+    lodmin = root.R * 0.012   # abaixo disso, a bolinha vira uma gema brilhante
+    parts = [_defs()]
     _draw(root, root.R + margin, root.R + margin, 0, parts, lodmin)
     subtitle = f"{scope_label} · {_count_leaves(root)} bolinhas num bolão"
     return _page(f"bolão — {pathlib.Path(path).resolve().name}", subtitle, size, "".join(parts))

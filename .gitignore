@@ -7,6 +7,8 @@ __pycache__/
 # saídas geradas (regeneráveis via `python -m witch ...`)
 grimorio.html
 examples/*.html
+*_atlas.html
+_atlas_full.html
 
 # screenshots / previews temporários de verificação
 _preview_*.png

@@ -23,6 +23,7 @@ import tokenize
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from witch.atlas import render_atlas, scan_project          # noqa: E402
 from witch.glyphs import COMMON_BUILTINS, KEYWORDS          # noqa: E402
 from witch.marks import mark_svg                            # noqa: E402
 from witch.render import (iter_glyphs, render_legend,       # noqa: E402
@@ -132,6 +133,25 @@ def test_token_coverage_is_one_to_one():
         meaningful += 1
     produced = sum(1 for _ in iter_glyphs(src))
     assert produced == meaningful, f"glifos {produced} != tokens {meaningful}"
+
+
+def test_atlas_scan():
+    modules = scan_project(ROOT)
+    names = {m.name for m in modules}
+    assert "witch/render.py" in names, "scanner nao achou render.py"
+    classes = {c.name for m in modules for c in m.classes}
+    assert "Stream" in classes, "scanner nao achou a classe Stream"
+    # a classe Stream tem seus metodos coletados
+    stream_methods = {meth.name for m in modules for c in m.classes
+                      if c.name == "Stream" for meth in c.methods}
+    assert {"__init__", "rand", "choice"} <= stream_methods, stream_methods
+
+
+def test_atlas_wellformed_and_deterministic():
+    a = render_atlas(ROOT)
+    _wellformed(a)
+    assert "atlas-edges" in a, "grupo de arcos (grafo de chamadas) ausente"
+    assert a == render_atlas(ROOT), "atlas nao e deterministico"
 
 
 def test_examples_execute():

@@ -43,6 +43,11 @@ def main(argv=None):
     lg.add_argument("-o", "--out", default="grimorio.html")
     lg.add_argument("--open", action="store_true")
 
+    at = sub.add_parser("atlas", help="lê um projeto inteiro e gera UM glifo grande (N subglifos)")
+    at.add_argument("path", nargs="?", default=".", help="pasta do projeto (padrão: atual)")
+    at.add_argument("-o", "--out", help="arquivo .html de saída")
+    at.add_argument("--open", action="store_true")
+
     args = p.parse_args(argv)
 
     if args.cmd == "render":
@@ -54,6 +59,10 @@ def main(argv=None):
         sys.exit(run_file(args.file))
     elif args.cmd == "legend":
         _write(render_legend(), args.out, args.open)
+    elif args.cmd == "atlas":
+        from .atlas import render_atlas
+        out = args.out or (pathlib.Path(args.path).resolve().name + "_atlas.html")
+        _write(render_atlas(args.path), out, args.open)
 
 
 if __name__ == "__main__":

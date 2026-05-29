@@ -177,9 +177,12 @@ def _a_eye(s):
 _ARCH = [_a_lattice, _a_star, _a_square, _a_radiant, _a_orbital, _a_sigil, _a_gates, _a_eye]
 
 
-def seal_svg(name, forged=False):
-    """Selo de `name`. Se forged=True, ganha um anel de vínculo externo —
-    a marca de um feitiço forjado naquele ponto (definição de função/classe)."""
+def seal_inner(name, forged=False):
+    """Markup interno do selo (coords 0..200, centro 100,100), sem o <svg>.
+
+    Permite embutir o selo dentro de outro SVG via <g transform=...> — usado
+    pelo atlas do projeto para posicionar/escalar cada feitiço.
+    Se forged=True, ganha um anel de vínculo externo (feitiço forjado ali)."""
     s = Stream(name)
     parts = [_circle(100, 100, 95, 0, 0.05, True),
              _circle(100, 100, 93, 1.6, 0.85)]
@@ -210,4 +213,9 @@ def seal_svg(name, forged=False):
     # runa central (primeira letra) — âncora de identidade
     parts.append(f'<g transform="translate(100,100) scale(0.36) translate(-50,-70)">{rune_marks(name[0])}</g>')
 
-    return f'<svg class="seal-svg" viewBox="0 0 200 200" aria-hidden="true">{"".join(parts)}</svg>'
+    return "".join(parts)
+
+
+def seal_svg(name, forged=False):
+    """Selo de `name` como elemento <svg> embutível."""
+    return f'<svg class="seal-svg" viewBox="0 0 200 200" aria-hidden="true">{seal_inner(name, forged)}</svg>'

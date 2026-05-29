@@ -30,6 +30,9 @@ python -m witch run examples/kitchen_sink.py
 
 # folha de referência com TODOS os glifos (o "grimório")
 python -m witch legend --open
+
+# ler um PROJETO INTEIRO e desenhar um glifo grande (atlas)
+python -m witch atlas . --open
 ```
 
 Na página, o botão **"mostrar texto"** revela o token original embaixo de cada
@@ -76,6 +79,19 @@ feitiços colocando sigilos dentro de outros:
   sigilo de `fib` aparece *dentro* do feitiço `main`. Mesmo feitiço = mesmo
   sigilo em todo lugar (é o que torna a linguagem aprendível e legível em escala).
 
+## Atlas do projeto — todo o código num glifo só
+
+`witch atlas <pasta>` lê **todos** os `.py` do projeto (via `ast`) e desenha
+**um único glifo grande**: o projeto é o círculo-mestre, cada arquivo um setor,
+cada classe um sub-círculo com seus métodos dentro, e cada função um sub-selo
+(o mesmo selo conjurado). Dois botões na página:
+
+- **mostrar nomes** — rótulo de cada feitiço;
+- **mostrar invocações** — arcos ligando quem chama quem (o grafo de chamadas,
+  por nome — heurística boa o suficiente para o mapa visual).
+
+É a arquitetura do programa virando um selo de invocação.
+
 ## Por que SVG e não imagem gerada por IA?
 
 Porque uma linguagem precisa que cada token seja **sempre o mesmo desenho**.
@@ -93,6 +109,7 @@ witch/
   marks.py     marcas de operador (todos), incl. compositor de augmented
   glyphs.py    classificação: keyword / builtin / self-cls / dunder / privado
   render.py    Python -> HTML de glifos (com f-strings) + folha de referência
+  atlas.py     lê o projeto inteiro (ast) -> UM glifo grande + grafo de chamadas
   runner.py    executa o .py
   cli.py       interface de linha de comando
 examples/      hello, oop, fstrings, kitchen_sink (todos executáveis)

@@ -48,6 +48,11 @@ def main(argv=None):
     at.add_argument("-o", "--out", help="arquivo .html de saída")
     at.add_argument("--open", action="store_true")
 
+    bo = sub.add_parser("bolao", help="junta tudo numa bola gigante (todas as bolinhas num bolão)")
+    bo.add_argument("path", nargs="?", default=".", help="arquivo .py ou pasta (padrão: atual)")
+    bo.add_argument("-o", "--out", help="arquivo .html de saída")
+    bo.add_argument("--open", action="store_true")
+
     args = p.parse_args(argv)
 
     if args.cmd == "render":
@@ -63,6 +68,10 @@ def main(argv=None):
         from .atlas import render_atlas
         out = args.out or (pathlib.Path(args.path).resolve().name + "_atlas.html")
         _write(render_atlas(args.path), out, args.open)
+    elif args.cmd == "bolao":
+        from .bolao import render_bolao
+        out = args.out or (pathlib.Path(args.path).resolve().stem + "_bolao.html")
+        _write(render_bolao(args.path), out, args.open)
 
 
 if __name__ == "__main__":

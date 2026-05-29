@@ -13,6 +13,7 @@ Garante que:
   - TODOS os exemplos executam de verdade (exit 0).
 """
 import io
+import math
 import pathlib
 import re
 import subprocess
@@ -24,6 +25,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from witch.atlas import render_atlas, scan_project          # noqa: E402
+from witch.bolao import build_file_scope, layout, render_bolao  # noqa: E402
 from witch.glyphs import COMMON_BUILTINS, KEYWORDS          # noqa: E402
 from witch.marks import mark_svg                            # noqa: E402
 from witch.orb import orb_svg                               # noqa: E402
@@ -167,6 +169,33 @@ def test_atlas_wellformed_and_deterministic():
     _wellformed(a)
     assert "atlas-edges" in a, "grupo de arcos (grafo de chamadas) ausente"
     assert a == render_atlas(ROOT), "atlas nao e deterministico"
+
+
+def test_bolao_wellformed_and_deterministic():
+    f = str(ROOT / "examples" / "kitchen_sink.py")
+    out = render_bolao(f)
+    _wellformed(out)
+    assert "bolinhas" in out, "subtítulo do bolão ausente"
+    assert out == render_bolao(f), "bolão nao e deterministico"
+
+
+def test_bolao_packs_without_overlap():
+    root = build_file_scope(str(ROOT / "examples" / "oop.py"))
+    layout(root)
+
+    def check(scope):
+        its = scope.items
+        for i in range(len(its)):
+            for j in range(i + 1, len(its)):
+                _, _, x1, y1, r1 = its[i]
+                _, _, x2, y2, r2 = its[j]
+                d = math.hypot(x1 - x2, y1 - y2)
+                assert d + 1e-6 >= r1 + r2, "bolinhas sobrepostas no empacotamento"
+            if its[i][0] == "scope":
+                check(its[i][1])
+        # caso raiz com poucas filhas tambem ok
+    check(root)
+    assert root.R > 0
 
 
 def test_examples_execute():

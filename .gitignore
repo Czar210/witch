@@ -8,6 +8,7 @@ __pycache__/
 grimorio.html
 examples/*.html
 *_atlas.html
+*_bolao.html
 _atlas_full.html
 
 # screenshots / previews temporários de verificação

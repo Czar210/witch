@@ -33,6 +33,10 @@ python -m witch legend --open
 
 # ler um PROJETO INTEIRO e desenhar um glifo grande (atlas)
 python -m witch atlas . --open
+
+# juntar TUDO numa bola gigante (todas as bolinhas num bolão)
+python -m witch bolao . --open          # projeto inteiro
+python -m witch bolao examples/oop.py   # ou um arquivo só
 ```
 
 Na página, o botão **"mostrar texto"** revela o token original embaixo de cada
@@ -101,6 +105,16 @@ por um padrão de girassol. Conforme a palavra cresce, os símbolos encolhem —
 o **diâmetro da bola permanece constante**: o "símbolo de bola" é sempre preservado.
 `self`/`cls` têm emblema próprio; dunders ganham anel duplo; privados, um ponto no topo.
 
+## Bolão — tudo numa bola gigante
+
+`witch bolao <arquivo-ou-pasta>` junta **todas as bolinhas num bolão enorme**:
+empacotamento de círculos recursivo onde o arquivo (ou projeto) é a bola gigante,
+cada classe/função uma bola média dentro dela, e cada token uma bolinha-folha
+(o mesmo selo/orbe/marca). O empacotamento é *front-chain* (como o `d3.pack`),
+rápido e justo. Para projetos grandes, bolinhas minúsculas viram pontos coloridos
+(nível de detalhe) — o projeto inteiro vira uma galáxia pontilhista aninhada,
+leve o bastante pra abrir no navegador.
+
 ## Por que SVG e não imagem gerada por IA?
 
 Porque uma linguagem precisa que cada token seja **sempre o mesmo desenho**.
@@ -120,6 +134,7 @@ witch/
   glyphs.py    classificação: keyword / builtin / self-cls / dunder / privado
   render.py    Python -> HTML de glifos (com f-strings) + folha de referência
   atlas.py     lê o projeto inteiro (ast) -> UM glifo grande + grafo de chamadas
+  bolao.py     junta tudo numa bola gigante (circle-packing recursivo + LOD)
   runner.py    executa o .py
   cli.py       interface de linha de comando
 examples/      hello, oop, fstrings, kitchen_sink (todos executáveis)

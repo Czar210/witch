@@ -14,6 +14,7 @@ import tokenize
 from .glyphs import (COMMON_BUILTINS, KEYWORDS, SPECIAL_NAMES, is_dunder,
                      is_private)
 from .marks import mark_svg
+from .orb import orb_svg
 from .runes import rune_svg
 from .seals import seal_svg
 from .theme import PAGE_CSS
@@ -60,17 +61,6 @@ def _summon(name, forged):
     return seal_svg(name, forged=forged)
 
 
-def _runes(text):
-    runes = "".join(rune_svg(c) for c in str(text) if not c.isspace())
-    return runes or rune_svg("·")
-
-
-def _cartouche(text, cat, open_mark="", close_mark=""):
-    o = f'<span class="qmark">{open_mark}</span>' if open_mark else ""
-    c = f'<span class="qmark">{close_mark}</span>' if close_mark else ""
-    return f'<span class="cartouche {cat}">{o}{_runes(text)}{c}</span>'
-
-
 def _string_body(s):
     i = 0
     while i < len(s) and s[i] in "rbfuRBFU":
@@ -93,17 +83,18 @@ def _special_mark(name):
 
 
 def _dunder(name):
-    return _cartouche(name.strip("_"), "dunder", "⟦", "⟧")
+    return orb_svg(name.strip("_") or "·", frame="double")
 
 
 def _private(name):
-    core = name.lstrip("_")
-    lead = len(name) - len(core)
-    return _cartouche(core, "private", "˚" * lead)
+    return orb_svg(name.lstrip("_") or "·", frame="dot")
 
 
 def _glyph_for(toktype, tokstr):
-    """Glifo de um token isolado. (categoria, markup) ou None se inesperado."""
+    """Glifo de um token isolado. (categoria, markup) ou None se inesperado.
+
+    Nomes, números e textos viram ORBES (bolas de runas) — sem escrita em fileira.
+    """
     name = token_mod.tok_name.get(toktype, "")
     if toktype == tokenize.NAME:
         if tokstr in KEYWORDS:
@@ -116,15 +107,15 @@ def _glyph_for(toktype, tokstr):
             return "dunder", _dunder(tokstr)
         if is_private(tokstr):
             return "private", _private(tokstr)
-        return "identifier", _cartouche(tokstr, "identifier")
+        return "identifier", orb_svg(tokstr)
     if toktype == tokenize.OP:
         return "operator", mark_svg(tokstr)
     if toktype == tokenize.NUMBER:
-        return "number", _cartouche(tokstr, "number")
+        return "number", orb_svg(tokstr)
     if name in _STRING_TOKENS:
-        return "string", _cartouche(_string_body(tokstr), "string", "❝", "❞")
+        return "string", orb_svg(_string_body(tokstr) or "·")
     if toktype == tokenize.COMMENT:
-        return "comment", _cartouche(tokstr.lstrip("#").strip(), "comment", "✶")
+        return "comment", orb_svg(tokstr.lstrip("#").strip() or "·")
     return None
 
 
@@ -157,7 +148,7 @@ def iter_glyphs(source):
         if nm == "FSTRING_MIDDLE":
             if tok.string == "":
                 continue
-            yield row, "string", _cartouche(tok.string, "string"), tok.string
+            yield row, "string", orb_svg(tok.string), tok.string
             continue
         if fdepth > 0 and tok.type == tokenize.OP and tok.string in ("{", "}"):
             # chave de interpolação (verde), distinta das chaves de dict
@@ -237,7 +228,12 @@ def render_legend():
     sections = []
 
     cells = "".join(_cell("identifier", rune_svg(c), c) for c in "abcdefghijklmnopqrstuvwxyz0123456789")
-    sections.append(_section("runas — alfabeto", cells))
+    sections.append(_section("runas — alfabeto (híbrido, estilo Tolkien)", cells))
+
+    orbs = [("identifier", "nome"), ("identifier", "calcular_total"),
+            ("string", "witch"), ("number", "42")]
+    cells = "".join(_cell(cat, orb_svg(t), t) for cat, t in orbs)
+    sections.append(_section("orbes — cada palavra vira uma bola de runas", cells))
 
     cells = "".join(_cell("keyword", seal_svg(k), k) for k in sorted(KEYWORDS))
     sections.append(_section("selos — palavras-chave", cells))
@@ -271,10 +267,10 @@ def render_legend():
     cells = "".join(_cell(cat, g, lbl) for cat, g, lbl in conj)
     sections.append(_section("feitiços conjurados — funções/classes suas", cells))
 
-    intro = ('<div class="intro">Cada token do Python tem um glifo fixo. Selos para '
-             'palavras-chave/funções, marcas para operadores, runas para '
-             'nomes/números/textos. Dunders ganham moldura ⟦ ⟧, atributos '
-             'privados um marcador ˚, self/cls um emblema. Funções e classes que '
-             'VOCÊ define viram selos próprios (rosa): forjados com anel de vínculo '
-             'na definição, e o mesmo selo é colocado em cada chamada.</div>')
+    intro = ('<div class="intro">Sem escrita: cada palavra (nome, número, texto) vira '
+             'uma BOLA densa de runas. Selos para palavras-chave/funções, marcas para '
+             'operadores. Dunders ganham anel duplo, atributos privados um ponto no '
+             'topo, self/cls um emblema. Funções e classes que VOCÊ define viram selos '
+             'próprios (rosa): forjados com anel de vínculo na definição, e o mesmo '
+             'selo é colocado em cada chamada.</div>')
     return _page("grimório — referência", intro + "".join(sections))

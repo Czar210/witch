@@ -33,6 +33,7 @@ header .sp{ flex:1; }
 .glyph{ display:inline-flex; flex-direction:column; align-items:center; position:relative; }
 .glyph svg.seal-svg{ width:64px; height:64px; }
 .glyph svg.mark{ width:36px; height:36px; }
+.glyph svg.orb{ width:48px; height:48px; }
 
 .cartouche{
   display:inline-flex; align-items:center; gap:1px; padding:3px 9px;

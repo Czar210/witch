@@ -11,10 +11,10 @@ o `if` é **sempre** o mesmo selo, então dá pra aprender a ler.
 | funções / tipos embutidos | **selo** (dourado/teal) | `print` `len` `range` `property` `staticmethod` |
 | **funções/classes que VOCÊ define** | **selo conjurado** (rosa) — forjado na definição, reusado em cada chamada | `def fib` / `fib(10)` |
 | operadores (todos) | **marca** | `+` `=` `==` `:=` `->` `//=` `...` `<<` |
-| nomes / números / textos | **runas** (alfabeto) | `nome` `42` `0xFF` `"ola"` |
+| nomes / números / textos | **orbe** — bola densa de runas (sem escrita) | `nome` `42` `"ola"` |
 | `self` / `cls` | **emblema** | ⊙ (instância) / ⊚ (molde) |
-| dunders | cartucho **⟦ ⟧** violeta | `__init__` `__repr__` |
-| atributos privados | cartucho com `˚` | `_x` `__cache` |
+| dunders | **orbe** com anel duplo (violeta) | `__init__` `__repr__` |
+| atributos privados | **orbe** com ponto no topo | `_x` `__cache` |
 | f-strings | verde, com a **expressão interpolada por dentro** | `f"v={x:>{w}}"` |
 
 ## Como usar
@@ -92,6 +92,15 @@ cada classe um sub-círculo com seus métodos dentro, e cada função um sub-sel
 
 É a arquitetura do programa virando um selo de invocação.
 
+## Orbes — palavras viram bolas (sem escrita)
+
+Nada de texto em fileira: cada **palavra** (nome, número, string) vira **uma bola
+densa de runas**. As runas-letra (estilo híbrido inspirado em Tolkien: esqueleto
+angular + remate curvo + diacrítico acima) são empacotadas dentro de um círculo
+por um padrão de girassol. Conforme a palavra cresce, os símbolos encolhem — então
+o **diâmetro da bola permanece constante**: o "símbolo de bola" é sempre preservado.
+`self`/`cls` têm emblema próprio; dunders ganham anel duplo; privados, um ponto no topo.
+
 ## Por que SVG e não imagem gerada por IA?
 
 Porque uma linguagem precisa que cada token seja **sempre o mesmo desenho**.
@@ -104,7 +113,8 @@ arte ilustrada depois, sem refazer nada.
 ```
 witch/
   _rand.py     fluxo pseudo-aleatório determinístico (semeado pelo token)
-  runes.py     alfabeto rúnico (letras, dígitos)
+  runes.py     alfabeto rúnico híbrido (estilo Tolkien): letras, dígitos
+  orb.py       agrupa as runas de uma palavra numa bola densa (sem escrita)
   seals.py     selos / círculos mágicos — 8 arquétipos distintos por hash
   marks.py     marcas de operador (todos), incl. compositor de augmented
   glyphs.py    classificação: keyword / builtin / self-cls / dunder / privado

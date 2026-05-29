@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT))
 from witch.atlas import render_atlas, scan_project          # noqa: E402
 from witch.glyphs import COMMON_BUILTINS, KEYWORDS          # noqa: E402
 from witch.marks import mark_svg                            # noqa: E402
+from witch.orb import orb_svg                               # noqa: E402
 from witch.render import (iter_glyphs, render_legend,       # noqa: E402
                           render_source)
 from witch.runes import rune_svg                            # noqa: E402
@@ -119,6 +120,20 @@ def test_user_functions_become_seals():
     forged = [mk for c, mk, o in summons]
     assert any("r=\"98" in mk or 'r="98' in mk for mk in forged), "definição sem anel de vínculo"
     assert any('r="98' not in mk for mk in forged), "chamada não deveria ter anel de vínculo"
+
+
+def test_words_become_orbs():
+    src = 'total = 42\nname = "witch"\n'
+    for _, cat, mk, orig in iter_glyphs(src):
+        if orig in ("total", "name", "42", '"witch"'):
+            assert "orb" in mk, f"{orig!r} deveria ser uma bola (orb)"
+    # determinístico, e palavras diferentes -> bolas diferentes
+    assert orb_svg("calcular") == orb_svg("calcular"), "orbe nao deterministico"
+    assert orb_svg("alfa") != orb_svg("beta"), "bolas iguais para palavras diferentes"
+    # o "símbolo de bola" é preservado para palavra curta E longa
+    for w in ("x", "calcular_total_geral_do_projeto"):
+        o = orb_svg(w)
+        assert o.startswith("<svg") and 'r="92"' in o, f"bola sem círculo: {w}"
 
 
 def test_token_coverage_is_one_to_one():

@@ -45,7 +45,9 @@ def _rune_strokes(ch):
 
 
 def rune_marks(ch):
-    """Markup SVG interno da runa (linhas + nós), coords no espaço 100 x 140."""
+    """Markup interno da runa híbrida (coords 100 x 140), estilo Tolkien:
+    esqueleto angular (Cirth) + remate curvo no pé da haste + diacrítico
+    (tehta) acima, escolhido pelo caractere."""
     strokes = _rune_strokes(ch)
     used = set()
     out = []
@@ -60,7 +62,25 @@ def rune_marks(ch):
         )
     for name in used:
         x, y = NODES[name]
-        out.append(f'<circle cx="{x}" cy="{y}" r="4.5" fill="currentColor"/>')
+        out.append(f'<circle cx="{x}" cy="{y}" r="3.5" fill="currentColor"/>')
+
+    # remate curvo no pé da haste (curva só no remate)
+    out.append('<path d="M50,125 q-9,8 -2,13" fill="none" '
+               'stroke="currentColor" stroke-width="6" stroke-linecap="round"/>')
+
+    # diacrítico (tehta) acima da haste, variando pelo caractere
+    m = rune_index(ch) % 4
+    if m == 0:
+        out.append('<circle cx="50" cy="6" r="4" fill="currentColor"/>')
+    elif m == 1:
+        out.append('<circle cx="42" cy="6" r="3.4" fill="currentColor"/>'
+                   '<circle cx="58" cy="6" r="3.4" fill="currentColor"/>')
+    elif m == 2:
+        out.append('<path d="M40,9 q10,-10 20,0" fill="none" '
+                   'stroke="currentColor" stroke-width="5" stroke-linecap="round"/>')
+    else:
+        out.append('<line x1="44" y1="11" x2="56" y2="2" '
+                   'stroke="currentColor" stroke-width="5" stroke-linecap="round"/>')
     return "".join(out)
 
 

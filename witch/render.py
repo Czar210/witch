@@ -6,13 +6,14 @@ levanta exceção: tokens inesperados saem com categoria 'UNHANDLED', o que os
 testes usam para garantir cobertura total.
 """
 
+import ast
 import html
 import io
 import token as token_mod
 import tokenize
 
-from .glyphs import (COMMON_BUILTINS, KEYWORDS, SPECIAL_NAMES, is_dunder,
-                     is_private)
+from .glyphs import (COMMON_BUILTINS, KEYWORDS, ROLE_GROUPS, ROLE_LABELS,
+                     SPECIAL_NAMES, is_dunder, is_private, role_of_keyword)
 from .marks import mark_svg
 from .orb import orb_svg
 from .runes import rune_svg
@@ -34,31 +35,44 @@ def _normalize(source):
 
 
 def _collect_definitions(source):
-    """Nomes definidos por `def`/`class` — viram selos próprios (conjurados).
+    """Funções/classes definidas pelo usuário, via ast.
 
-    Definir é forjar o feitiço; chamar é colocar o mesmo selo. Por isso o nome
-    recebe o selo tanto na definição quanto em cada uso.
+    Devolve (funcs, classes, loc): conjuntos de nomes e um mapa nome -> linhas
+    de código (para dimensionar o selo: tamanho = quantidade de código).
     """
-    names = set()
-    expect = False
+    funcs, classes, loc = set(), set(), {}
     try:
-        for tok in tokenize.generate_tokens(io.StringIO(_normalize(source)).readline):
-            if tok.type in _SKIP:
-                continue
-            if tok.type == tokenize.NAME and tok.string in ("def", "class"):
-                expect = True
-                continue
-            if expect:
-                if tok.type == tokenize.NAME:
-                    names.add(tok.string)
-                expect = False
-    except (tokenize.TokenError, IndentationError, SyntaxError):
-        pass
-    return names
+        tree = ast.parse(_normalize(source))
+    except (SyntaxError, ValueError):
+        return funcs, classes, loc
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            funcs.add(node.name)
+            loc[node.name] = max(1, (node.end_lineno or node.lineno) - node.lineno + 1)
+        elif isinstance(node, ast.ClassDef):
+            classes.add(node.name)
+            loc[node.name] = max(1, (node.end_lineno or node.lineno) - node.lineno + 1)
+    return funcs, classes, loc
 
 
-def _summon(name, forged):
-    return seal_svg(name, forged=forged)
+def _sized(markup, px):
+    """Injeta o tamanho de exibição no glifo (tamanho = quantidade de código)."""
+    if markup.startswith("<svg"):
+        return markup.replace("<svg ", f'<svg style="width:{px:.0f}px;height:{px:.0f}px" ', 1)
+    return markup
+
+
+def _glyph_px(cat, orig, loc):
+    if cat in ("keyword", "builtin"):
+        return 64
+    if cat == "summon":                       # selo da sua função/classe ~ linhas de código
+        return max(52, min(108, 48 + 1.4 * loc.get(orig, 1)))
+    if cat == "operator":
+        return 36
+    if cat == "special":
+        return 40
+    nch = len([c for c in str(orig) if not c.isspace()])   # orbes ~ nº de letras
+    return max(44, min(96, 40 + 3.2 * nch))
 
 
 def _string_body(s):
@@ -98,9 +112,9 @@ def _glyph_for(toktype, tokstr):
     name = token_mod.tok_name.get(toktype, "")
     if toktype == tokenize.NAME:
         if tokstr in KEYWORDS:
-            return "keyword", seal_svg(tokstr)
+            return "keyword", seal_svg(tokstr, role_of_keyword(tokstr))
         if tokstr in COMMON_BUILTINS:
-            return "builtin", seal_svg(tokstr)
+            return "builtin", seal_svg(tokstr, "builtin")
         if tokstr in SPECIAL_NAMES:
             return "special", _special_mark(tokstr)
         if is_dunder(tokstr):
@@ -125,7 +139,8 @@ def iter_glyphs(source):
     Trata f-strings (PEP 701): mostra a expressão interpolada por dentro, com o
     texto literal e as chaves `{ }` em verde. Nunca levanta exceção.
     """
-    defined = _collect_definitions(source)
+    funcs, classes, _loc = _collect_definitions(source)
+    defined = funcs | classes
     reader = io.StringIO(_normalize(source)).readline
     fdepth = 0
     forge_next = False  # o próximo NAME é o ponto de definição (def/class NAME)
@@ -158,9 +173,8 @@ def iter_glyphs(source):
         # nome definido pelo usuário -> selo conjurado (forjado na definição)
         if (tok.type == tokenize.NAME and tok.string in defined
                 and tok.string not in KEYWORDS and tok.string not in COMMON_BUILTINS):
-            yield row, "summon", _summon(tok.string, forged_here), tok.string
-            if tok.string in ("def", "class"):  # nunca verdadeiro, mas defensivo
-                forge_next = True
+            role = "class" if tok.string in classes else "function"
+            yield row, "summon", seal_svg(tok.string, role, forged_here), tok.string
             continue
 
         if tok.type == tokenize.NAME and tok.string in ("def", "class"):
@@ -191,6 +205,7 @@ def _page(title, body, nav=""):
 def render_source(source, title="grimório"):
     source = _normalize(source)
     lines = source.split("\n")
+    _f, _c, loc = _collect_definitions(source)
 
     rows = {}
     for row, cat, markup, orig in iter_glyphs(source):
@@ -207,7 +222,8 @@ def render_source(source, title="grimório"):
         spans = []
         for cat, markup, orig in glyphs:
             t = html.escape(orig, quote=True)
-            spans.append(f'<span class="glyph {cat}" data-text="{t}" title="{t}">{markup}</span>')
+            m = _sized(markup, _glyph_px(cat, orig, loc))
+            spans.append(f'<span class="glyph {cat}" data-text="{t}" title="{t}">{m}</span>')
         out.append(f'<div class="line" style="padding-left:{indent * 0.6:.1f}em">{"".join(spans)}</div>')
 
     nav = '<a class="btn" href="grimorio.html">referência</a>'
@@ -223,54 +239,70 @@ def _cell(cat, glyph, label):
     return f'<div class="cell {cat}"><div class="g">{glyph}</div><div class="lbl">{html.escape(label)}</div></div>'
 
 
+def _swatch(cat):
+    return ('<svg viewBox="0 0 40 40" style="width:38px;height:38px">'
+            '<circle cx="20" cy="20" r="15" fill="currentColor"/></svg>')
+
+
 def render_legend():
-    """Folha de referência: alfabeto + todos os selos, marcas e glifos de POO."""
-    sections = []
+    """O decodificador: explica o que cada coisa significa, pra dar pra LER."""
+    sec = []
+    intro = ('<div class="intro"><b>Como ler.</b> A <b>cor</b> diz a categoria · a '
+             '<b>forma</b> do selo diz o papel · as <b>runas</b> ao redor soletram o '
+             'nome (do topo, sentido horário) · o <b>tamanho</b> indica a quantidade '
+             'de código · o <b>anel de vínculo</b> marca onde algo é definido.</div>')
 
+    # 1) COR = categoria
+    cats = [("keyword", "palavra-chave"), ("builtin", "função embutida"),
+            ("summon", "sua função/classe"), ("identifier", "variável / nome"),
+            ("number", "número"), ("string", "texto"), ("operator", "operador"),
+            ("dunder", "dunder"), ("private", "privado"), ("comment", "comentário")]
+    cells = "".join(f'<div class="cell {c}"><div class="g">{_swatch(c)}</div>'
+                    f'<div class="lbl">{html.escape(l)}</div></div>' for c, l in cats)
+    sec.append(_section("a COR diz a categoria", cells))
+
+    # 2) FORMA = papel
+    examples = {"control": "if", "definition": "def", "jump": "return",
+                "value": "True", "binding": "import", "context": "try"}
+    cells = []
+    for role, ex in examples.items():
+        kws = " ".join(ROLE_GROUPS[role])
+        cells.append(f'<div class="cell keyword"><div class="g">{seal_svg(ex, role)}</div>'
+                     f'<div class="lbl">{html.escape(ROLE_LABELS[role])}</div>'
+                     f'<div class="sub2">{html.escape(kws)}</div></div>')
+    cells.append(f'<div class="cell builtin"><div class="g">{seal_svg("print", "builtin")}</div>'
+                 f'<div class="lbl">{html.escape(ROLE_LABELS["builtin"])}</div></div>')
+    cells.append(f'<div class="cell summon"><div class="g">{seal_svg("minhaFn", "function")}</div>'
+                 f'<div class="lbl">{html.escape(ROLE_LABELS["function"])}</div></div>')
+    cells.append(f'<div class="cell summon"><div class="g">{seal_svg("MinhaClasse", "class")}</div>'
+                 f'<div class="lbl">{html.escape(ROLE_LABELS["class"])}</div></div>')
+    sec.append(_section("a FORMA diz o papel", "".join(cells)))
+
+    # 3) RUNAS = nome (alfabeto)
     cells = "".join(_cell("identifier", rune_svg(c), c) for c in "abcdefghijklmnopqrstuvwxyz0123456789")
-    sections.append(_section("runas — alfabeto (híbrido, estilo Tolkien)", cells))
+    sec.append(_section("as RUNAS soletram o nome (alfabeto)", cells))
 
-    orbs = [("identifier", "nome"), ("identifier", "calcular_total"),
-            ("string", "witch"), ("number", "42")]
-    cells = "".join(_cell(cat, orb_svg(t), t) for cat, t in orbs)
-    sections.append(_section("orbes — cada palavra vira uma bola de runas", cells))
+    # 4) ORBES + TAMANHO
+    cells = (_cell("string", _sized(orb_svg("oi"), 46), '"oi" — curto')
+             + _cell("string", _sized(orb_svg("calcular"), 80), '"calcular" — longo')
+             + _cell("identifier", _sized(orb_svg("nome"), 56), "nome")
+             + _cell("number", _sized(orb_svg("42"), 48), "42"))
+    sec.append(_section("ORBE: a palavra vira bola legível · TAMANHO ~ nº de letras", cells))
 
-    cells = "".join(_cell("keyword", seal_svg(k), k) for k in sorted(KEYWORDS))
-    sections.append(_section("selos — palavras-chave", cells))
+    # 5) MARCADORES
+    mk = [("summon", _sized(seal_svg("fib", "function", True), 72), "definição (anel de vínculo)"),
+          ("summon", _sized(seal_svg("fib", "function", False), 64), "chamada (sem anel)"),
+          ("summon", _sized(seal_svg("calcular", "function"), 96), "função grande (mais linhas)"),
+          ("dunder", _dunder("__init__"), "dunder (anel duplo)"),
+          ("private", _private("_x"), "privado (ponto no topo)"),
+          ("special", _special_mark("self"), "self"),
+          ("special", _special_mark("cls"), "cls")]
+    cells = "".join(_cell(c, g, l) for c, g, l in mk)
+    sec.append(_section("marcadores · TAMANHO do selo ~ linhas de código", cells))
 
-    cells = "".join(_cell("builtin", seal_svg(b), b) for b in sorted(COMMON_BUILTINS))
-    sections.append(_section("selos — funções e tipos", cells))
-
+    # 6) OPERADORES
     ops = sorted(token_mod.EXACT_TOKEN_TYPES, key=lambda s: (len(s), s))
     cells = "".join(_cell("operator", mark_svg(o), o) for o in ops)
-    sections.append(_section("marcas — operadores (todos do Python)", cells))
+    sec.append(_section("operadores (marcas)", cells))
 
-    oop = [
-        ("special", _special_mark("self"), "self"),
-        ("special", _special_mark("cls"), "cls"),
-        ("dunder", _dunder("__init__"), "__init__"),
-        ("dunder", _dunder("__repr__"), "__repr__"),
-        ("private", _private("_x"), "_x"),
-        ("private", _private("__cache"), "__cache"),
-        ("string", '<span class="qmark" style="font-size:28px">ƒ❝…❞</span>', 'f"…"'),
-    ]
-    cells = "".join(_cell(cat, g, lbl) for cat, g, lbl in oop)
-    sections.append(_section("POO e encapsulamento", cells))
-
-    conj = [
-        ("summon", _summon("saudar", True), "def saudar"),
-        ("summon", _summon("saudar", False), "saudar()"),
-        ("summon", _summon("fib", True), "def fib"),
-        ("summon", _summon("Animal", True), "class Animal"),
-        ("summon", _summon("classify", False), "classify()"),
-    ]
-    cells = "".join(_cell(cat, g, lbl) for cat, g, lbl in conj)
-    sections.append(_section("feitiços conjurados — funções/classes suas", cells))
-
-    intro = ('<div class="intro">Sem escrita: cada palavra (nome, número, texto) vira '
-             'uma BOLA densa de runas. Selos para palavras-chave/funções, marcas para '
-             'operadores. Dunders ganham anel duplo, atributos privados um ponto no '
-             'topo, self/cls um emblema. Funções e classes que VOCÊ define viram selos '
-             'próprios (rosa): forjados com anel de vínculo na definição, e o mesmo '
-             'selo é colocado em cada chamada.</div>')
-    return _page("grimório — referência", intro + "".join(sections))
+    return _page("grimório — como ler os glifos", intro + "".join(sec))

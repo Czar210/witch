@@ -77,5 +77,6 @@ body.show-text .glyph::after{
 .cell .g svg{ width:64px; height:64px; }
 .cell .g svg.rune{ width:36px; height:50px; }
 .cell .lbl{ font-family:ui-monospace,Consolas,monospace; font-size:12px; color:#aeb6c7; }
+.cell .sub2{ font-size:10px; color:#7c8597; max-width:130px; line-height:1.35; word-break:break-word; }
 .intro{ max-width:1120px; margin:0 auto; padding:8px 30px 0; color:#9098ad; font-size:14px; }
 """

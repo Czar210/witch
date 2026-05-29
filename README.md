@@ -7,11 +7,11 @@ o `if` é **sempre** o mesmo selo, então dá pra aprender a ler.
 
 | categoria | glifo | exemplos |
 |---|---|---|
-| palavras-chave | **selo** (círculo mágico) | `if` `def` `for` `return` `match` `async` |
-| funções / tipos embutidos | **selo** (dourado/teal) | `print` `len` `range` `property` `staticmethod` |
-| **funções/classes que VOCÊ define** | **selo conjurado** (rosa) — forjado na definição, reusado em cada chamada | `def fib` / `fib(10)` |
+| palavras-chave | **selo** — a forma diz o papel | `if` `def` `for` `return` `match` `async` |
+| funções / tipos embutidos | **selo** (engrenagem, dourado/teal) | `print` `len` `range` `property` |
+| **funções/classes que VOCÊ define** | **selo conjurado** (rosa) — forjado na definição, reusado em cada chamada; tamanho = linhas | `def fib` / `fib(10)` |
 | operadores (todos) | **marca** | `+` `=` `==` `:=` `->` `//=` `...` `<<` |
-| nomes / números / textos | **orbe** — bola densa de runas (sem escrita) | `nome` `42` `"ola"` |
+| nomes / números / textos | **orbe** — bola legível de runas (ordem de leitura); tamanho = nº de letras | `nome` `42` `"ola"` |
 | `self` / `cls` | **emblema** | ⊙ (instância) / ⊚ (molde) |
 | dunders | **orbe** com anel duplo (violeta) | `__init__` `__repr__` |
 | atributos privados | **orbe** com ponto no topo | `_x` `__cache` |
@@ -96,14 +96,26 @@ cada classe um sub-círculo com seus métodos dentro, e cada função um sub-sel
 
 É a arquitetura do programa virando um selo de invocação.
 
-## Orbes — palavras viram bolas (sem escrita)
+## Como ler os glifos (tudo tem significado)
 
-Nada de texto em fileira: cada **palavra** (nome, número, string) vira **uma bola
-densa de runas**. As runas-letra (estilo híbrido inspirado em Tolkien: esqueleto
-angular + remate curvo + diacrítico acima) são empacotadas dentro de um círculo
-por um padrão de girassol. Conforme a palavra cresce, os símbolos encolhem — então
-o **diâmetro da bola permanece constante**: o "símbolo de bola" é sempre preservado.
-`self`/`cls` têm emblema próprio; dunders ganham anel duplo; privados, um ponto no topo.
+Nada é arbitrário — cada propriedade visual codifica algo, e o `legend` (grimório)
+é o decodificador completo:
+
+- **Cor → categoria** (palavra-chave, função embutida, sua função/classe, variável, número, texto…)
+- **Forma do selo → papel**: controle de fluxo (bifurcação), definição (bloco), salto (seta),
+  valor/lógica (balança), ligação/escopo (elos), contexto/erro (portões), função embutida
+  (engrenagem), sua função (faísca), sua classe (vaso).
+- **Runas ao redor → o nome**, em ordem de leitura (do topo, sentido horário) — dá pra ler.
+- **Tamanho → quantidade de código**: selo de função/classe ~ nº de linhas; orbe ~ nº de letras.
+- **Anel de vínculo → ponto de definição**; **anel duplo → dunder**; **ponto no topo → privado**;
+  **emblema ⊙/⊚ → self/cls**.
+
+## Orbes — palavras viram bolas legíveis
+
+Cada **palavra** (nome, número, string) vira **uma bola de runas** em **ordem de leitura**
+(as runas-letra ficam em pé ao redor do círculo, do topo no sentido horário; palavras longas
+continuam num anel interno). As runas seguem um alfabeto híbrido inspirado em Tolkien
+(esqueleto angular + remate curvo + diacrítico). O tamanho da bola cresce com o nº de letras.
 
 ## Bolão — tudo numa bola gigante
 

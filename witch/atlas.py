@@ -186,11 +186,11 @@ def _edges(modules, by_name):
 
 
 # --------------------------------------------------------------- svg
-def _seal_at(name, x, y, rad, forged, cls=""):
+def _seal_at(name, x, y, rad, role, forged, cls=""):
     scale = rad / 100.0
     title = f"<title>{html.escape(name)}</title>"
     g = (f'<g class="aseal summon" transform="translate({x:.1f},{y:.1f}) '
-         f'scale({scale:.4f}) translate(-100,-100)">{title}{seal_inner(name, forged)}</g>')
+         f'scale({scale:.4f}) translate(-100,-100)">{title}{seal_inner(name, role, forged)}</g>')
     lbl = (f'<text class="albl" x="{x:.1f}" y="{y + rad + 12:.1f}" '
            f'text-anchor="middle">{html.escape(cls + name)}</text>')
     return g + lbl
@@ -233,18 +233,18 @@ def build_svg(modules, root):
         for c in m.classes:
             p.append(f'<circle cx="{c.x:.1f}" cy="{c.y:.1f}" r="{c.r:.1f}" fill="currentColor" opacity="0.05"/>')
             p.append(f'<circle cx="{c.x:.1f}" cy="{c.y:.1f}" r="{c.r:.1f}" fill="none" stroke="#9bb0d8" stroke-width="1.3" opacity="0.65"/>')
-            p.append(_seal_at(c.name, c.x, c.y, c.r * 0.32, True))
+            p.append(_seal_at(c.name, c.x, c.y, c.r * 0.32, "class", True))
             for meth in c.methods:
-                p.append(_seal_at(meth.name, meth.x, meth.y, meth.r, meth.forged))
+                p.append(_seal_at(meth.name, meth.x, meth.y, meth.r, "function", meth.forged))
 
     # funções soltas
     for m in modules:
         for f in m.funcs:
-            p.append(_seal_at(f.name, f.x, f.y, f.r, f.forged))
+            p.append(_seal_at(f.name, f.x, f.y, f.r, "function", f.forged))
 
     # núcleo do projeto + nome em runas ao redor do anel externo
     proj = pathlib.Path(root).resolve().name or "projeto"
-    p.append(_seal_at(proj, C, C, 118, True))
+    p.append(_seal_at(proj, C, C, 118, "function", True))
     chars = proj[:20]
     n = max(len(chars), 1)
     for i, ch in enumerate(chars):

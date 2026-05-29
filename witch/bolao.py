@@ -53,6 +53,20 @@ def _defs():
     return "<defs>" + "".join(grads) + "</defs>"
 
 
+def _leaf_r(cat, orig, loc):
+    """Raio da bolinha = quantidade de código (linhas p/ função, letras p/ palavra)."""
+    if cat == "summon":
+        return max(16.0, min(46.0, 16.0 + 0.5 * loc.get(orig, 1)))
+    if cat in ("keyword", "builtin"):
+        return 24.0
+    if cat == "operator":
+        return 15.0
+    if cat == "special":
+        return 18.0
+    nch = len([c for c in str(orig) if not c.isspace()])
+    return max(13.0, min(40.0, 12.0 + 1.3 * nch))
+
+
 @dataclass
 class Scope:
     name: str
@@ -74,12 +88,15 @@ def build_file_scope(path):
         tree = ast.parse(src)
     except (SyntaxError, ValueError):
         return root
+    loc = {}
 
     def rec(node, parent):
         for ch in ast.iter_child_nodes(node):
             if isinstance(ch, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 kind = "class" if isinstance(ch, ast.ClassDef) else "func"
-                sc = Scope(ch.name, kind, ch.lineno, ch.end_lineno or ch.lineno)
+                hi = ch.end_lineno or ch.lineno
+                loc[ch.name] = max(1, hi - ch.lineno + 1)
+                sc = Scope(ch.name, kind, ch.lineno, hi)
                 parent.children.append(sc)
                 rec(ch, sc)
             else:
@@ -93,10 +110,10 @@ def build_file_scope(path):
                 return find(c, row)
         return scope
 
-    for row, cat, markup, _ in iter_glyphs(src):
+    for row, cat, markup, orig in iter_glyphs(src):
         if not markup.startswith("<svg"):
             continue
-        find(root, row).glyphs.append((cat, markup, LEAF_RADIUS))
+        find(root, row).glyphs.append((cat, markup, _leaf_r(cat, orig, loc)))
     return root
 
 

@@ -32,7 +32,7 @@ from witch.orb import orb_svg                               # noqa: E402
 from witch.render import (iter_glyphs, render_legend,       # noqa: E402
                           render_source)
 from witch.runes import rune_svg                            # noqa: E402
-from witch.seals import seal_svg                            # noqa: E402
+from witch.seals import MOTIFS, seal_svg                    # noqa: E402
 
 EXAMPLES = sorted((ROOT / "examples").glob("*.py"))
 _SKIP = {tokenize.NEWLINE, tokenize.NL, tokenize.INDENT, tokenize.DEDENT,
@@ -65,6 +65,17 @@ def test_seals_wellformed_and_distinct():
 def test_seal_determinism():
     for n in ("def", "if", "print", "class", "while"):
         assert seal_svg(n) == seal_svg(n), n
+
+
+def test_shape_encodes_role():
+    # mesmo papel -> mesmo motivo central (a FORMA significa o papel)
+    assert MOTIFS["control"] in seal_svg("if", "control")
+    assert MOTIFS["control"] in seal_svg("while", "control")
+    assert MOTIFS["jump"] in seal_svg("return", "jump")
+    # papéis diferentes -> motivos diferentes
+    motifs = [MOTIFS[r] for r in ("control", "definition", "jump", "value",
+                                  "binding", "context", "builtin", "function", "class")]
+    assert len(set(motifs)) == len(motifs), "motivos de papel nao sao distintos"
 
 
 def test_all_operators_have_marks():

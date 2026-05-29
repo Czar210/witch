@@ -19,6 +19,32 @@ COMMON_BUILTINS = {
 # Nomes especiais de POO que ganham uma marca própria (não são keyword/builtin).
 SPECIAL_NAMES = {"self", "cls"}
 
+# Papel (semântica) de cada palavra-chave -> define a FORMA do selo.
+ROLE_GROUPS = {
+    "control": ["if", "elif", "else", "for", "while", "match", "case"],
+    "definition": ["def", "class", "lambda", "async", "type"],
+    "jump": ["return", "yield", "break", "continue", "pass", "raise", "await"],
+    "value": ["True", "False", "None", "and", "or", "not", "is", "in"],
+    "binding": ["import", "from", "as", "global", "nonlocal", "del"],
+    "context": ["with", "try", "except", "finally", "assert"],
+}
+ROLE_LABELS = {
+    "control": "controle de fluxo",
+    "definition": "definição",
+    "jump": "salto / fluxo",
+    "value": "valor / lógica",
+    "binding": "ligação / escopo",
+    "context": "contexto / erro",
+    "builtin": "função embutida",
+    "function": "sua função",
+    "class": "sua classe",
+}
+_KW_ROLE = {name: role for role, names in ROLE_GROUPS.items() for name in names}
+
+
+def role_of_keyword(name):
+    return _KW_ROLE.get(name, "value")
+
 
 def is_dunder(name):
     return len(name) > 4 and name.startswith("__") and name.endswith("__")

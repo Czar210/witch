@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+
+# config local do Claude Code (não publicar)
+.claude/
+
+# saídas geradas (regeneráveis via `python -m witch ...`)
+grimorio.html
+examples/*.html
+
+# screenshots / previews temporários de verificação
+_preview_*.png
+_pv_*.png
+_seal_preview.html
